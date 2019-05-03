@@ -1329,9 +1329,13 @@ class L2TripleTaggedTest(sai_base_test.ThriftInterfaceDataPlane):
     def runTest(self):
         print ""
         switch_init(self.client)
-        taglist = [0x8100, 1000, 0x88a8, 100, 0x8100, 10]
-        vlan_id = taglist[1]
-        tagged_packet_size = 68
+        pcp_list=[0,0,0]
+        cfi_list=[0,0,0]
+        tpid_list=[0x8100, 0x88a8, 0x8100]
+        vlan_list=[1000, 100, 10]
+
+        vlan_id = vlan_list[0]
+        tagged_packet_size = 100
         untagged_packet_size = tagged_packet_size - 4
 
         port1 = port_list[0]
@@ -1353,37 +1357,53 @@ class L2TripleTaggedTest(sai_base_test.ThriftInterfaceDataPlane):
         sai_thrift_create_fdb(self.client, vlan_oid, mac1, port1, mac_action)
         sai_thrift_create_fdb(self.client, vlan_oid, mac2, port2, mac_action)
 
-        pkt1 = simple_tcp_packet_with_taglist(pktlen=tagged_packet_size,
-                                 eth_dst= mac2,
-                                 eth_src= mac1,
-                                 ip_dst='10.0.0.1',
-                                 ip_id=101,
-                                 ip_ttl=64,
-                                 taglist=taglist)
+        pkt1 = simple_tcp_packet_ext_taglist(pktlen=tagged_packet_size,
+                                             eth_dst=mac2,
+                                             eth_src=mac1,
+                                             dl_taglist_enable=True,
+                                             dl_vlan_pcp_list=pcp_list,
+                                             dl_vlan_cfi_list=cfi_list,
+                                             dl_tpid_list=tpid_list,
+                                             dl_vlanid_list=vlan_list,
+                                             ip_dst='10.0.0.1',
+                                             ip_id=101,
+                                             ip_ttl=64)
 
-        exp1 = simple_tcp_packet_with_taglist(pktlen=untagged_packet_size,
-                                 eth_dst= mac2,
-                                 eth_src= mac1,
-                                 ip_dst='10.0.0.1',
-                                 ip_id=101,
-                                 ip_ttl=64,
-                                 taglist=taglist[2:])
+        exp1 = simple_tcp_packet_ext_taglist(pktlen=untagged_packet_size,
+                                             eth_dst=mac2,
+                                             eth_src=mac1,
+                                             dl_taglist_enable=True,
+                                             dl_vlan_pcp_list=pcp_list[1:],
+                                             dl_vlan_cfi_list=cfi_list[1:],
+                                             dl_tpid_list=tpid_list[1:],
+                                             dl_vlanid_list=vlan_list[1:],
+                                             ip_dst='10.0.0.1',
+                                             ip_id=101,
+                                             ip_ttl=64)
 
-        pkt2 = simple_tcp_packet_with_taglist(pktlen=untagged_packet_size,
-                                 eth_dst= mac1,
-                                 eth_src= mac2,
-                                 ip_dst='10.0.0.1',
-                                 ip_id=101,
-                                 ip_ttl=64,
-                                 taglist=taglist[2:])
+        pkt2 = simple_tcp_packet_ext_taglist(pktlen=untagged_packet_size,
+                                             eth_dst=mac1,
+                                             eth_src=mac2,
+                                             dl_taglist_enable=True,
+                                             dl_vlan_pcp_list=pcp_list[1:],
+                                             dl_vlan_cfi_list=cfi_list[1:],
+                                             dl_tpid_list=tpid_list[1:],
+                                             dl_vlanid_list=vlan_list[1:],
+                                             ip_dst='10.0.0.1',
+                                             ip_id=101,
+                                             ip_ttl=64)
 
-        exp2 = simple_tcp_packet_with_taglist(pktlen=tagged_packet_size,
-                                 eth_dst= mac1,
-                                 eth_src= mac2,
-                                 ip_dst='10.0.0.1',
-                                 ip_id=101,
-                                 ip_ttl=64,
-                                 taglist=taglist)
+        exp2 = simple_tcp_packet_ext_taglist(pktlen=tagged_packet_size,
+                                             eth_dst=mac1,
+                                             eth_src=mac2,
+                                             dl_taglist_enable=True,
+                                             dl_vlan_pcp_list=pcp_list,
+                                             dl_vlan_cfi_list=cfi_list,
+                                             dl_tpid_list=tpid_list,
+                                             dl_vlanid_list=vlan_list,
+                                             ip_dst='10.0.0.1',
+                                             ip_id=101,
+                                             ip_ttl=64)
 
         try:
             print "Sending tagged(vlan%d) packet port 1 -> port 2)" % vlan_id
@@ -1413,10 +1433,15 @@ class L2TripleTaggedTest(sai_base_test.ThriftInterfaceDataPlane):
 class L2TripleTaggedTest2(sai_base_test.ThriftInterfaceDataPlane):
     def runTest(self):
         print ""
+
         switch_init(self.client)
-        taglist = [0x8100, 1000, 0x88a8, 100, 0x8100, 10]
-        vlan_id = taglist[1]
-        tagged_packet_size = 100
+        pcp_list = [0,0,0]
+        cfi_list = [0,0,0]
+        tpid_list = [0x8100, 0x88a8, 0x8100]
+        vlan_list = [1000, 100, 10]
+        vlan_id = vlan_list[0]
+
+        tagged_packet_size = 0x50
         untagged_packet_size = tagged_packet_size - 4
 
         port1 = port_list[0]
@@ -1438,25 +1463,41 @@ class L2TripleTaggedTest2(sai_base_test.ThriftInterfaceDataPlane):
         sai_thrift_create_fdb(self.client, vlan_oid, mac1, port1, mac_action)
         sai_thrift_create_fdb(self.client, vlan_oid, mac2, port2, mac_action)
 
-        pkt1 = simple_eth_packet_with_taglist(pktlen=tagged_packet_size,
-                                 eth_dst= mac2,
-                                 eth_src= mac1,
-                                 taglist=taglist)
+        pkt1 = simple_eth_raw_packet_with_taglist(pktlen=tagged_packet_size,
+                                                  eth_dst=mac2,
+                                                  eth_src=mac1,
+                                                  dl_taglist_enable=True,
+                                                  dl_vlan_pcp_list=pcp_list,
+                                                  dl_vlan_cfi_list=cfi_list,
+                                                  dl_tpid_list=tpid_list,
+                                                  dl_vlanid_list=vlan_list)
 
-        exp1 = simple_eth_packet_with_taglist(pktlen=untagged_packet_size,
-                                 eth_dst= mac2,
-                                 eth_src= mac1,
-                                 taglist=taglist[2:])
+        exp1 = simple_eth_raw_packet_with_taglist(pktlen=untagged_packet_size,
+                                                  eth_dst=mac2,
+                                                  eth_src=mac1,
+                                                  dl_taglist_enable=True,
+                                                  dl_vlan_pcp_list=pcp_list[1:],
+                                                  dl_vlan_cfi_list=cfi_list[1:],
+                                                  dl_tpid_list=tpid_list[1:],
+                                                  dl_vlanid_list=vlan_list[1:])
 
-        pkt2 = simple_tcp_packet_with_taglist(pktlen=untagged_packet_size,
-                                 eth_dst= mac1,
-                                 eth_src= mac2,
-                                 taglist=taglist[2:])
+        pkt2 = simple_eth_raw_packet_with_taglist(pktlen=untagged_packet_size,
+                                                  eth_dst=mac1,
+                                                  eth_src=mac2,
+                                                  dl_taglist_enable=True,
+                                                  dl_vlan_pcp_list=pcp_list[1:],
+                                                  dl_vlan_cfi_list=cfi_list[1:],
+                                                  dl_tpid_list=tpid_list[1:],
+                                                  dl_vlanid_list=vlan_list[1:])
 
-        exp2 = simple_tcp_packet_with_taglist(pktlen=tagged_packet_size,
-                                 eth_dst= mac1,
-                                 eth_src= mac2,
-                                 taglist=taglist)
+        exp2 = simple_eth_raw_packet_with_taglist(pktlen=tagged_packet_size,
+                                                  eth_dst=mac1,
+                                                  eth_src=mac2,
+                                                  dl_taglist_enable=True,
+                                                  dl_vlan_pcp_list=pcp_list,
+                                                  dl_vlan_cfi_list=cfi_list,
+                                                  dl_tpid_list=tpid_list,
+                                                  dl_vlanid_list=vlan_list)
 
         try:
             print "Sending tagged(vlan%d) packet port 1 -> port 2)" % vlan_id
